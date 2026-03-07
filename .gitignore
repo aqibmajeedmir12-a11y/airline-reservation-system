@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+venv/
+.env
+
+# Logs
+*.log
+
+# Database
+*.db
+
+# IDE
+.vscode/
+.idea/
+
+# Reports
+flake8_report.txt
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Gemini
+.gemini/
