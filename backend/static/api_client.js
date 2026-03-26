@@ -72,26 +72,26 @@ window.API = (function () {
         },
 
         me: function () { return req('/auth/me'); },
-        searchFlights: function (f, t) { return req('/flights?from=' + (f || '') + '&to=' + (t || '')); },
+        searchFlights: function (f, t) { return req('/flights?from=' + encodeURIComponent(f || '') + '&to=' + encodeURIComponent(t || '')); },
         adminFlights: function () { return req('/flights/all'); },
         getMyBookings: function () { return req('/bookings'); },
         createBooking: function (d) { return req('/bookings', { method: 'POST', body: JSON.stringify(d) }); },
         createEmergency: function (d) { return req('/bookings/emergency', { method: 'POST', body: JSON.stringify(d) }); },
         createElder: function (d) { return req('/bookings/elder', { method: 'POST', body: JSON.stringify(d) }); },
         createStudent: function (d) { return req('/bookings/student', { method: 'POST', body: JSON.stringify(d) }); },
-        cancelBooking: function (id) { return req('/bookings/' + id, { method: 'DELETE' }); },
+        cancelBooking: function (id) { return req('/bookings/' + encodeURIComponent(id), { method: 'DELETE' }); },
         getRewards: function () { return req('/rewards'); },
         redeemReward: function (name) { return req('/rewards/redeem', { method: 'POST', body: JSON.stringify({ reward_name: name }) }); },
         updateProfile: function (d) { return req('/profile', { method: 'PUT', body: JSON.stringify(d) }); },
         changePassword: function (o, n) { return req('/profile/password', { method: 'PUT', body: JSON.stringify({ old_password: o, new_password: n }) }); },
         adminDashboard: function () { return req('/admin/dashboard'); },
-        adminBookings: function (type) { return req('/admin/bookings?type=' + (type || 'all')); },
+        adminBookings: function (type) { return req('/admin/bookings?type=' + encodeURIComponent(type || 'all')); },
         adminUsers: function () { return req('/admin/users'); },
         adminAnalytics: function () { return req('/admin/analytics'); },
-        updateFlight: function (id, d) { return req('/flights/' + id, { method: 'PUT', body: JSON.stringify(d) }); },
+        updateFlight: function (id, d) { return req('/flights/' + encodeURIComponent(id), { method: 'PUT', body: JSON.stringify(d) }); },
         adminAddFlight: function (d) { return req('/admin/flights/add', { method: 'POST', body: JSON.stringify(d) }); },
-        adminEditFlight: function (id, d) { return req('/admin/flights/' + id, { method: 'PUT', body: JSON.stringify(d) }); },
-        adminDeleteFlight: function (id) { return req('/admin/flights/' + id, { method: 'DELETE' }); },
-        adminCancelBooking: function (id) { return req('/admin/bookings/' + id + '/cancel', { method: 'POST' }); }
+        adminEditFlight: function (id, d) { return req('/admin/flights/' + encodeURIComponent(id), { method: 'PUT', body: JSON.stringify(d) }); },
+        adminDeleteFlight: function (id) { return req('/admin/flights/' + encodeURIComponent(id), { method: 'DELETE' }); },
+        adminCancelBooking: function (id) { return req('/admin/bookings/' + encodeURIComponent(id) + '/cancel', { method: 'POST' }); }
     };
 })();

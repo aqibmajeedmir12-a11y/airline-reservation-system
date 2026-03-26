@@ -1298,6 +1298,100 @@
       margin-bottom: 6px;
     }
 
+    /* ELDER CHATBOT STYLES */
+    .elder-chatbot-toggle {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      cursor: pointer;
+      box-shadow: 0 8px 24px rgba(0,201,255,0.4);
+      z-index: 1000;
+      transition: all 0.3s;
+    }
+    .elder-chatbot-toggle:hover {
+      transform: scale(1.1);
+    }
+    .elder-chatbot-container {
+      position: fixed;
+      bottom: 100px;
+      right: 24px;
+      width: 340px;
+      max-width: calc(100vw - 48px);
+      background: rgba(7, 18, 53, 0.95);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.3s;
+    }
+    .elder-chatbot-container.hidden {
+      display: none !important;
+    }
+    .elder-chatbot-container .chat-header {
+      background: rgba(0,201,255,0.1);
+      padding: 14px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--glass-border);
+      font-weight: bold;
+    }
+    .elder-chatbot-container .chat-messages {
+      height: 300px;
+      padding: 14px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .chat-msg {
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 13.5px;
+      max-width: 85%;
+      line-height: 1.4;
+      word-break: break-word;
+    }
+    .chat-msg.bot {
+      background: rgba(255,255,255,0.08);
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+    }
+    .chat-msg.user {
+      background: var(--accent);
+      color: #fff;
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+    }
+    .chat-input-row {
+      display: flex;
+      padding: 12px;
+      gap: 8px;
+      border-top: 1px solid var(--glass-border);
+    }
+    .chat-input-row input {
+      flex: 1;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--glass-border);
+      padding: 10px 14px;
+      border-radius: 20px;
+      color: #fff;
+      outline: none;
+      font-family: inherit;
+    }
+
     .loading-row {
       text-align: center;
       padding: 40px;
@@ -2515,6 +2609,17 @@
           <div class="elder-card hidden" id="elderStep4">
             <div class="elder-title">✅ Confirm Booking</div>
             <div class="glass-card mt-6" style="text-align:left;max-width:380px;margin:20px auto 0;">
+              
+              <div class="form-group mb-4">
+                <label class="form-label" style="font-size:13px;color:var(--text-dim);">Passenger Name</label>
+                <input type="text" class="form-input" id="elderPaxName" placeholder="Full Name">
+              </div>
+              <div class="form-group mb-4">
+                <label class="form-label" style="font-size:13px;color:var(--text-dim);">Identity / ID Number</label>
+                <input type="text" class="form-input" id="elderPaxId" placeholder="Aadhaar / Passport">
+              </div>
+              <hr style="border-color:var(--glass-border); margin:14px 0;">
+
               <div class="flex justify-between mb-4"><span class="text-dim">From</span><strong
                   id="elderConfirmFrom">—</strong></div>
               <div class="flex justify-between mb-4"><span class="text-dim">To</span><strong
@@ -2527,6 +2632,24 @@
             </div><button class="btn btn-success w-full mt-6" style="max-width:380px;" onclick="elderConfirm()">✅
               Confirm &amp; Book</button><button class="btn btn-glass mt-4" style="max-width:380px;"
               onclick="elderReset()">↩ Start Over</button>
+          </div>
+
+          <!-- Elder Chatbot -->
+          <div class="elder-chatbot-toggle" onclick="toggleElderChat()">
+            🤖
+          </div>
+          <div class="elder-chatbot-container hidden" id="elderChatContainer">
+            <div class="chat-header">
+              <span>🤖 Assistance</span>
+              <button class="btn-glass" style="padding:4px 8px;font-size:12px;width:auto;" onclick="toggleElderChat()">✕</button>
+            </div>
+            <div class="chat-messages" id="elderChatMsgs">
+              <div class="chat-msg bot">Hello! I am here to assist you with your booking. Do you need any help?</div>
+            </div>
+            <div class="chat-input-row">
+              <input type="text" id="elderChatInput" placeholder="Type..." onkeydown="if(event.key==='Enter') sendElderChat()">
+              <button class="btn btn-primary btn-sm" onclick="sendElderChat()">Send</button>
+            </div>
           </div>
         </div>
 
@@ -3378,6 +3501,7 @@
       document.getElementById('elderStep' + next)?.classList.remove('hidden');
       for (let i = 1; i <= 4; i++) { const s = document.getElementById('estep' + i); if (!s) continue; s.classList.remove('active', 'done'); if (i < next) s.classList.add('done'); else if (i === next) s.classList.add('active'); }
       if (next === 4) {
+        document.getElementById('elderPaxName').value = currentUser?.name || '';
         document.getElementById('elderConfirmFrom').textContent = elderData.from;
         document.getElementById('elderConfirmTo').textContent = elderData.to;
         const dv = document.getElementById('elderDate')?.value;
@@ -3385,6 +3509,10 @@
       }
     }
     async function elderConfirm() {
+      const paxName = document.getElementById('elderPaxName').value.trim();
+      const paxId = document.getElementById('elderPaxId').value.trim();
+      if (!paxName || !paxId) { showToast('error', 'Please enter your Name and ID to proceed'); return; }
+
       const date = document.getElementById('elderDate')?.value || new Date().toISOString().split('T')[0];
       const fromCity = elderData.from; const toCity = elderData.to;
       // Map city names to codes
@@ -3397,7 +3525,7 @@
         showToast('success', `✅ Booking ${bk.booking_id} confirmed for ${fromCity} → ${toCity}! Downloading ticket...`);
         generateTicketPDF({
           bookingId: bk.booking_id,
-          passenger: currentUser?.name || 'Passenger',
+          passenger: paxName,
           from: bk.from_city || fromCity,
           to: bk.to_city || toCity,
           flightId: bk.flight_id || flightId,
@@ -3408,7 +3536,8 @@
           meal: 'Vegetarian',
           payment: 'Card',
           fare: bk.fare || 0,
-          bookingType: 'elder'
+          bookingType: 'elder',
+          studentId: paxId // passing as studentId to render in ticket for elder ID
         });
         elderReset(); showUserPage('home'); renderHomeStats();
       } catch (e) { showToast('error', e.message); }
@@ -3417,6 +3546,34 @@
       elderData = { from: '', to: '', date: '', flightId: 'AI-101' };
       for (let i = 1; i <= 4; i++) { const s = document.getElementById('elderStep' + i); if (s) { i === 1 ? s.classList.remove('hidden') : s.classList.add('hidden'); } const st = document.getElementById('estep' + i); if (st) { st.classList.remove('active', 'done'); if (i === 1) st.classList.add('active'); } }
       document.querySelectorAll('.elder-option').forEach(o => o.classList.remove('sel'));
+      document.getElementById('elderPaxName').value = '';
+      document.getElementById('elderPaxId').value = '';
+    }
+
+    // Elder Chatbot logic
+    function toggleElderChat() {
+      document.getElementById('elderChatContainer').classList.toggle('hidden');
+    }
+    function sendElderChat() {
+      const inp = document.getElementById('elderChatInput');
+      const val = inp.value.trim();
+      if (!val) return;
+      const msgs = document.getElementById('elderChatMsgs');
+      msgs.innerHTML += `<div class="chat-msg user">${val}</div>`;
+      inp.value = '';
+      msgs.scrollTop = msgs.scrollHeight;
+
+      setTimeout(() => {
+        let reply = "I'm sorry, I didn't understand. Are you trying to book a flight? Please follow the steps on the screen, starting with selecting your 'From' city.";
+        const low = val.toLowerCase();
+        if (low.includes('hello') || low.includes('hi')) reply = 'Hello there! How can I help you today?';
+        else if (low.includes('book') || low.includes('flight')) reply = 'You can book a flight easily by choosing where you are flying from, then your destination, the date, and finally entering your name and ID to confirm.';
+        else if (low.includes('id') || low.includes('identity')) reply = 'For Identity Number, you can enter your Aadhaar, Voter ID, or Passport number so we can verify your booking.';
+        else if (low.includes('step')) reply = 'Just click the city icons to choose your route. If your city is not there, type it in the box and press the arrow.';
+        
+        msgs.innerHTML += `<div class="chat-msg bot">${reply}</div>`;
+        msgs.scrollTop = msgs.scrollHeight;
+      }, 600);
     }
 
     // ── Profile ──

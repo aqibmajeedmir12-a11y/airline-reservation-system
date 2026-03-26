@@ -4,6 +4,7 @@ Main application file with all routes and database integration
 """
 
 import os
+import shutil
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 import jwt
@@ -17,7 +18,14 @@ from email.mime.multipart import MIMEMultipart
 
 # ===== CONFIG =====
 SECRET_KEY = "skyflow-secret-key-2024"
-DB_PATH = os.path.join(os.path.dirname(__file__), "skyflow.db")
+
+if os.environ.get("VERCEL"):
+    DB_PATH = "/tmp/skyflow.db"
+    original_db = os.path.join(os.path.dirname(__file__), "skyflow.db")
+    if not os.path.exists(DB_PATH) and os.path.exists(original_db):
+        shutil.copy2(original_db, DB_PATH)
+else:
+    DB_PATH = os.path.join(os.path.dirname(__file__), "skyflow.db")
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 
 app = Flask(__name__, static_folder=STATIC_DIR, static_url_path="/static")
@@ -237,12 +245,11 @@ def token_required(f):
 
 def admin_required(f):
     @wraps(f)
-    @token_required
     def decorated(*args, **kwargs):
         if g.current_user['role'] != 'admin':
             return {"success": False, "error": "Admin access required"}, 403
         return f(*args, **kwargs)
-    return decorated
+    return token_required(decorated)
 
 def create_jwt_token(user_id):
     token = jwt.encode({'user_id': user_id, 'exp': datetime.now(timezone.utc) + timedelta(days=30)}, SECRET_KEY, algorithm="HS256")
@@ -669,7 +676,11 @@ def cancel_booking(booking_id):
     conn = get_db()
     c = conn.cursor()
 
-    c.execute("SELECT * FROM bookings WHERE id = ? AND user_id = ?", (booking_id, g.current_user['id']))
+    # Admins can cancel any booking; regular users can cancel only their own
+    if g.current_user.get('role') == 'admin':
+        c.execute("SELECT * FROM bookings WHERE id = ?", (booking_id,))
+    else:
+        c.execute("SELECT * FROM bookings WHERE id = ? AND user_id = ?", (booking_id, g.current_user['id']))
     booking = c.fetchone()
 
     if not booking:
@@ -913,11 +924,13 @@ def admin_analytics():
     total_revenue = c.fetchone()['total'] or 0
 
     # Payment distribution
+    import re
     c.execute("SELECT payment_method, COUNT(*) as cnt FROM bookings GROUP BY payment_method")
     pay_dist_rows = c.fetchall()
     payment_distribution = {}
     for row in pay_dist_rows:
-        payment_distribution[row['payment_method']] = row['cnt']
+        clean_name = re.sub(r'[^\w\s]', '', row['payment_method']).strip()
+        payment_distribution[clean_name] = payment_distribution.get(clean_name, 0) + row['cnt']
 
     # Daily revenue for chart
     c.execute("""SELECT date(created_at) as day, SUM(fare) as rev 
@@ -1065,6 +1078,8 @@ def server_error(error):
     return {"success": False, "error": "Server error"}, 500
 
 # ===== MAIN =====
+# Initialize database unconditionally so it works on Vercel where __main__ is not executed
+init_db()
+
 if __name__ == "__main__":
-    init_db()
     app.run(debug=True, host="0.0.0.0", port=5001)
